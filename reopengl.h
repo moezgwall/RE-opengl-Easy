@@ -1,5 +1,6 @@
 #ifndef RE_OPENGL_H
 #define RE_OPENGL_H
+
 #include "cglm/cglm.h"
 #include "stb_img.h"
 #include <GL/glew.h>
@@ -9,8 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef enum { TEXTURE_CLAMP, TEXTURE_REPEAT } TextureSettingS;
+#define SIOPENGL static inline
 
+typedef enum { TEXTURE_CLAMP, TEXTURE_REPEAT } TextureSettingS;
 typedef enum { FILTER_LINEAR, FILTER_NEAREST } TextureFilterS;
 
 typedef struct {
@@ -19,8 +21,8 @@ typedef struct {
   int height;
   size_t channels;
   TextureSettingS setting;
-
 } TextureS;
+
 typedef struct {
   mat4 view;
   mat4 projections;
@@ -35,8 +37,7 @@ typedef struct {
   float sensitivity;
   float yaw;
   float pitch;
-  float lastx;
-  float lasty;
+  vec2 lastPosition; // instead of float x, float y
 } CCameraS;
 
 typedef struct {
@@ -54,6 +55,7 @@ typedef struct {
   int width;
   int height;
 } FrameBufferS;
+
 typedef struct {
   CCameraS camera;
   FrameBufferS framebuffer;
@@ -70,13 +72,14 @@ typedef struct {
   UItypeS type;
   bool isVisible;
 } UIelementS;
+
 typedef enum {
   UI_STATE_NORMAL,
   UI_STATE_HOVER,
   UI_STATE_PRESSED
 } UIButtonState;
 
-typedef struct{
+typedef struct {
   TextureS textureNormal;
   TextureS textureHover;
   TextureS texturePressed;
@@ -575,9 +578,7 @@ void InitCamera(CCameraS *cam) {
   cam->sensitivity = 0.1f;
   cam->yaw = -90.0f;
   cam->pitch = 0.0f;
-  cam->lastx = 400;
-  cam->lasty = 300;
-
+  cam->lastPostion = (vec2){.x = 100, .y = 100};
   glm_mat4_identity(cam->camera.view);
   glm_mat4_identity(cam->camera.projections);
 }
@@ -637,7 +638,7 @@ void ProcessKeyboardInput(GLFWwindow *window, CCameraS *cam, float deltaTime) {
   }
 }
 
-void MouseCallback(GLFWwindow *window, double xpos, double ypos) {
+void MouseCallback(GLFWwindow *window, float xpos, float ypos) {
   static bool firstMouse = true;
   static float lastX = 400, lastY = 300;
 
@@ -646,16 +647,16 @@ void MouseCallback(GLFWwindow *window, double xpos, double ypos) {
     return;
 
   if (firstMouse) {
-    lastX = (float)xpos;
-    lastY = (float)ypos;
+    lastX = xpos;
+    lastY = ypos;
     firstMouse = false;
   }
 
-  float xoffset = (float)xpos - lastX;
-  float yoffset = lastY - (float)ypos;
+  float xoffset = xpos - lastX;
+  float yoffset = lastY - ypos;
 
-  lastX = (float)xpos;
-  lastY = (float)ypos;
+  lastX = xpos;
+  lastY = ypos;
 
   xoffset *= cam->sensitivity;
   yoffset *= cam->sensitivity;
@@ -668,6 +669,7 @@ void MouseCallback(GLFWwindow *window, double xpos, double ypos) {
   if (cam->pitch < -89.0f)
     cam->pitch = -89.0f;
 
+  // cam->lastPosition = {lastX,lastY};
   UpdateCameraFront(cam);
 }
 
