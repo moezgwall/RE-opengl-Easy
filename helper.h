@@ -10,7 +10,7 @@
 #define ADD_NOTE(comment) mark_sus(__FILE__,__LINE__ + 1,comment)
 
 void mark_sus(const char* fpath,int line,const char* comment);
-char* shift_args_next(int argc,char** argv); 
+char* shift_args_next(int* argc,char*** argv); 
 
 
 #ifdef HELPER_IMPLEMENTATION 
@@ -20,8 +20,8 @@ void mark_sus(const char* fpath, int line, const char* comment){
     FILE* current_file = fopen(fpath,"r"); 
     FILE* temp = fopen("temp.c","w");
     if (!current_file || !temp){
-        fclose(current_file);
-        fclose(temp);
+        if (!current_file) fclose(current_file);
+        if (!temp)  fclose(temp);
         return;
     }
     
@@ -30,7 +30,11 @@ void mark_sus(const char* fpath, int line, const char* comment){
 
     while (fgets(buffer,sizeof(buffer),current_file)){
         if (cline == line && !strstr(buffer,"// SUS_CODE")){
+            #ifdef __WIN32__
             buffer[strcspn(buffer,"\r\n")] = '\0';
+            #else
+            buffer[strcspn(buffer,"\n")] = '\0';
+            #endif
             fprintf(temp,"%s // SUS_CODE: %s \n",buffer,comment);
         }else{
             fputs(buffer,temp);
@@ -46,10 +50,11 @@ void mark_sus(const char* fpath, int line, const char* comment){
     }
 }
 
-char* shift_args_next(int argc,char** argv){
-    argc--;
-    *argv++;
-    return *argv;
+char* shift_args_next(int* argc,char*** argv){
+    if ((*argc) <= 1) return NULL;
+    (*argc)--;
+    (*argv)++;
+    return **argv;
 }
 
 
